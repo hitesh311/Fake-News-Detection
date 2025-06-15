@@ -1,0 +1,140 @@
+# Fake News Detection Project: Key Concepts Explained
+
+## 1. Project Overview
+This project focuses on detecting fake news using natural language processing (NLP) and deep learning. It classifies news articles as either "Real" or "Fake" using a transformer-based model.
+
+## 2. Data Collection & Preprocessing
+
+### 2.1 Dataset
+- **Source**: Kaggle (Fake and Real News Dataset)
+- **Structure**:
+  - Fake.csv: Contains fake news articles
+  - True.csv: Contains real news articles
+- **Features Used**:
+  - Title: Article headline
+  - Text: Article content
+  - Label: 0 (Fake) or 1 (True)
+
+### 2.2 Data Augmentation
+**What it is**: Technique to artificially expand the training dataset by creating modified versions of existing data.
+
+**Why we used it**:
+- Increases the amount of training data
+- Helps prevent overfitting
+- Improves model generalization
+
+**Techniques Applied**:
+1. **Synonym Replacement**: Replaces words with their synonyms
+   - Example: "The quick brown fox" → "The fast brown fox"
+   
+2. **Random Deletion**: Randomly removes words from the text
+   - Example: "The quick brown fox" → "The brown fox"
+   
+3. **Random Swap**: Swaps the order of adjacent words
+   - Example: "The quick brown fox" → "The brown quick fox"
+   
+4. **Sentence Shuffling**: Reorders sentences in the text
+   - Example: "First sentence. Second sentence." → "Second sentence. First sentence."
+
+## 3. Natural Language Processing (NLP) Concepts
+
+### 3.1 Tokenization
+**What it is**: The process of splitting text into smaller units called tokens (words, subwords, or characters).
+
+**In our project**:
+- We use WordPiece tokenization (used by DistilBERT)
+- Special tokens added:
+  - [CLS]: Added at the start (for classification tasks)
+  - [SEP]: Separates different sentences
+  - [PAD]: Used for padding sequences to the same length
+
+### 3.2 Text Cleaning
+- Convert to lowercase
+- Remove special characters and numbers
+- Remove extra whitespace
+- Handle missing values
+
+## 4. Model Architecture: DistilBERT
+
+### 4.1 Why DistilBERT?
+- **Efficiency**: 40% smaller than BERT while retaining 97% of its performance
+- **Speed**: Faster training and inference
+- **Resource-friendly**: Lower memory requirements
+
+### 4.2 Transformer Architecture
+- **Self-Attention**: Mechanism that allows the model to weigh the importance of different words in a sentence
+- **Layers**: DistilBERT has 6 transformer layers (BERT-base has 12)
+- **Hidden Size**: 768 dimensions
+- **Attention Heads**: 12 parallel attention mechanisms
+
+## 5. Training Process
+
+### 5.1 Data Preparation
+- Split into training (80%) and validation (20%) sets
+- Converted text to numerical tokens
+- Created attention masks to handle padding
+
+### 5.2 Model Training
+- **Optimizer**: AdamW (Adam with weight decay)
+- **Learning Rate**: 2e-5 (small for fine-tuning)
+- **Batch Size**: 16 (trade-off between speed and stability)
+- **Epochs**: 3 (to prevent overfitting)
+- **Loss Function**: Cross-Entropy Loss
+
+### 5.3 Learning Rate Scheduling
+- Linear warmup over first 500 steps
+- Linear decay for the remaining training steps
+- Helps stabilize training and improve convergence
+
+## 6. Evaluation Metrics
+
+### 6.1 Accuracy
+- Percentage of correctly classified samples
+- Formula: (True Positives + True Negatives) / Total Samples
+
+### 6.2 Loss
+- Cross-entropy loss measures model's prediction error
+- Lower values indicate better performance
+
+### 6.3 Classification Report
+- **Precision**: Of all items labeled as class X, what percentage were correct?
+- **Recall**: Of all items that are truly class X, what percentage were found?
+- **F1-Score**: Harmonic mean of precision and recall
+
+## 7. Model Saving & Loading
+- Saved in two formats:
+  1. **Hugging Face format**: For easy loading with transformers library
+  2. **PyTorch .pt format**: For custom loading and inference
+- Includes:
+  - Model weights
+  - Tokenizer
+  - Configuration
+  - Label mappings
+
+## 8. Deployment (Flask API)
+- **Framework**: Flask (lightweight Python web framework)
+- **Endpoints**:
+  - `/predict`: Accepts news text, returns prediction
+  - `/explain`: Provides model's reasoning for the prediction
+- **Frontend**: Simple HTML/CSS/JavaScript interface
+
+## 9. Model Interpretation
+- **Attention Visualization**: Shows which words the model focused on
+- **Confidence Scores**: Probability of each class
+- **Explanation**: Simple text explaining the model's decision
+
+## 10. Future Improvements
+- Try different model architectures (RoBERTa, ALBERT)
+- Add more data augmentation techniques
+- Implement ensemble methods
+- Add multi-language support
+- Deploy as a cloud service
+
+## 11. Key Libraries Used
+- **Transformers**: For pre-trained models and tokenization
+- **PyTorch**: Deep learning framework
+- **Pandas**: Data manipulation
+- **NLTK**: Text processing
+- **NLPAug**: Data augmentation
+- **Scikit-learn**: Evaluation metrics
+- **Flask**: Web application framework

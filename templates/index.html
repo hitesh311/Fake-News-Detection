@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 30px;
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress {
+            height: 25px;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .explanation {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            border-radius: 0 5px 5px 0;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>Fake News Detector</h2>
+                <p class="mb-0">Enter a news article to check its authenticity</p>
+            </div>
+            <div class="card-body">
+                <form id="newsForm">
+                    <div class="mb-3">
+                        <label for="newsText" class="form-label">News Article Text</label>
+                        <textarea class="form-control" id="newsText" rows="8" placeholder="Paste the news article text here..." required></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Check Authenticity</button>
+                    </div>
+                </form>
+
+                <div id="loading" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing the article...</p>
+                </div>
+
+                <div id="resultCard" class="result-card">
+                    <h4 class="mt-4">Analysis Result</h4>
+                    <div id="predictionResult" class="alert"></div>
+                    
+                    <h5 class="mt-4">Confidence Levels</h5>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Fake News</span>
+                            <span id="fakePercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div id="fakeBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Real News</span>
+                            <span id="realPercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div id="realBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="explanation" class="explanation">
+                        <h5>Explanation</h5>
+                        <p id="explanationText"></p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>How does it work?</h5>
+                        <p>This tool uses a deep learning model called DistilBERT to analyze news articles. It has been trained on thousands of real and fake news articles to identify patterns and characteristics of each type.</p>
+                        <p>The model looks at various linguistic features, writing style, and content patterns to make its prediction.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('newsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('newsText').value.trim();
+            if (!text) return;
+            
+            // Show loading, hide previous results
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultCard').style.display = 'none';
+            
+            try {
+                const formData = new FormData();
+                formData.append('text', text);
+                
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error analyzing the article');
+                }
+                
+                const result = await response.json();
+                displayResult(result);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while analyzing the article. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        function displayResult(result) {
+            const resultCard = document.getElementById('resultCard');
+            const predictionResult = document.getElementById('predictionResult');
+            const fakePercent = document.getElementById('fakePercent');
+            const realPercent = document.getElementById('realPercent');
+            const fakeBar = document.getElementById('fakeBar');
+            const realBar = document.getElementById('realBar');
+            const explanationText = document.getElementById('explanationText');
+            
+            // Set prediction result
+            const isFake = result.prediction === 'Fake';
+            predictionResult.className = `alert ${isFake ? 'alert-danger' : 'alert-success'}`;
+            predictionResult.innerHTML = `
+                <strong>Prediction:</strong> This article is likely <strong>${result.prediction} News</strong>
+                <div class="mt-2">Confidence: ${Math.round(Math.max(...Object.values(result.confidence)))}%</div>
+            `;
+            
+            // Update progress bars
+            const fakeConfidence = result.confidence.Fake;
+            const realConfidence = result.confidence.Real;
+            
+            fakePercent.textContent = `${fakeConfidence.toFixed(1)}%`;
+            realPercent.textContent = `${realConfidence.toFixed(1)}%`;
+            
+            fakeBar.style.width = `${fakeConfidence}%`;
+            realBar.style.width = `${realConfidence}%`;
+            
+            // Set explanation
+            explanationText.textContent = result.explanation;
+            
+            // Show result card
+            resultCard.style.display = 'block';
+            
+            // Scroll to results
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
